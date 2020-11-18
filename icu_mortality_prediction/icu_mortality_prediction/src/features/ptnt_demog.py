@@ -209,45 +209,6 @@ def write_best_features(dummies):
 
 
 
-print("*******************************************") 
-print("patient demographics with unique icu stays")
 
-print("*******************************************")
-ptnt_demog = import_demog_data()
-ptnt_demog2 = ptnt_demog[~ptnt_demog.index.duplicated(keep='first')].copy()
-ptnt_demog2 = convert_datetimes(ptnt_demog2)
-
-print("the shape of ptnt_demog2 = {}".format(ptnt_demog2.shape))
-for col in ptnt_demog2.columns:
-    print(col)
-
-
-
-#print(ptnt_demog.columns)
-print("calling calculate_durations")
-ptnt_demog2 = calculate_durations(ptnt_demog2)
-#print "ptnt_demog2 out of function"
-
-
-
-
-print("calling create_diagnoses_defs")
-diagnoses_bm, diagnoses = create_diagnoses_defs(ptnt_demog2)
-#print(diagnoses_bm)
-#print(diagnoses.head())
-print("calling create_diagnoses_df")
-ptnt_demog_data, diagnoses2 = create_diagnoses_df(ptnt_demog2, diagnoses_bm, diagnoses)
-#print(ptnt_demog_data.head())
-print("Calling continuous to categorical conversion")
-continuous_to_categorical(ptnt_demog_data)
-#print(ptnt_demog_data.head())
-print("Calling categorical to dummy variables")
-dummies = categorical_to_dummies(ptnt_demog_data)
-dummies = dummies.merge(diagnoses2, left_index = True, right_index = True, 
-                           how = 'left')
-print(dummies.head())
-
-write_best_features(dummies)
-print("Patient demographic pre-processing and feature selection complete")
 
 
