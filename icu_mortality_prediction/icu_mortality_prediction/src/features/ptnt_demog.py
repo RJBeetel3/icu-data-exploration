@@ -35,29 +35,35 @@ def convert_datetimes(ptnt_demog2):
 
     return ptnt_demog2
 
-def calculate_durations(ptnt_demog2):    
 
-    print("Calculating ages, duration of stays")
-    # len(pd.date_range()) APPEARS TO TAKE A VERY LONG TIME
-    for index, row in ptnt_demog2.iterrows():
-        if (pd.notnull(row['intime']) & pd.notnull(row['dob'])):
-            age_val = len(pd.date_range(end = row['intime'], start = row['dob'], freq = 'A'))
-        else: 
-            age_val = np.nan
-        if (pd.notnull(row['intime']) & pd.notnull(row['outtime'])):
-            icu_stay_val = len(pd.date_range(end = row['outtime'], start = row['intime'], freq = 'H'))
-        else: 
-            icu_stay_val = np.nan
-        if (pd.notnull(row['admittime']) & pd.notnull(row['dischtime'])):
-            hosp_stay_val = len(pd.date_range(end = row['dischtime'], start = row['admittime'], freq = 'H'))
-        else:
-            hosp_stay_val = np.nan
-    
-        ptnt_demog2.set_value(index, 'age', age_val)
-        ptnt_demog2.set_value(index, 'icu_stay', icu_stay_val)
-        ptnt_demog2.set_value(index, 'hosp_stay', hosp_stay_val)
+def calculate_age(row):
+
+    if (pd.notnull(row['intime']) & pd.notnull(row['dob'])):
+        age_val = len(pd.date_range(end=row['intime'], start=row['dob'], freq='A'))
+    else:
+        age_val = np.nan
+    return age_val
+
+def calculate_icu_stay_length(row):
+
+    if (pd.notnull(row['intime']) & pd.notnull(row['outtime'])):
+        icu_stay_val = len(pd.date_range(end=row['outtime'], start=row['intime'], freq='H'))
+    else:
+        icu_stay_val = np.nan
+    return icu_stay_val
+
+def calculate_hospital_stay(row):
+
+    if (pd.notnull(row['admittime']) & pd.notnull(row['dischtime'])):
+        hosp_stay_val = len(pd.date_range(end=row['dischtime'], start=row['admittime'], freq='H'))
+    else:
+        hosp_stay_val = np.nan
+    return hosp_stay_val
+
+def reconfigure_patient_demographics_columns(ptnt_demog_df):
+
     print("Reconfiguring columns")
-    cols = list(ptnt_demog2.columns)
+    cols = list(ptnt_demog_df.columns)
     cols.pop(cols.index('icd9_code'))
     cols.pop(cols.index('icd9_code.1'))
     cols.pop(cols.index('short_title'))
@@ -68,28 +74,41 @@ def calculate_durations(ptnt_demog2):
     cols.pop(cols.index('seq_num'))
     cols.pop(cols.index('dob'))
 
-    #cols.insert(0, cols.pop(cols.index('icustay_id')))
+    # cols.insert(0, cols.pop(cols.index('icustay_id')))
     cols.insert(0, cols.pop(cols.index('hadm_id')))
     cols.insert(1, cols.pop(cols.index('age')))
     cols.insert(2, cols.pop(cols.index('icu_stay')))
     cols.insert(3, cols.pop(cols.index('hosp_stay')))
     cols.insert(len(cols), cols.pop(cols.index('hospital_expire_flag')))
+    ptnt_demog_df = ptnt_demog_df[cols].copy()
+    return ptnt_demog_df
 
+def truncate_age_values(ptnt_demog_df):
 
-    ptnt_demog2 = ptnt_demog2[cols].copy()
-    print("ptnt_demog2 in function")
-    print(ptnt_demog2.columns)
-  
-    # CODE FOR AGE OUTLIERS 
-    print("age stats")
-    print(ptnt_demog2['age'].describe())
-    print ("replacing age outliers")
+    age_replace_vals = list(ptnt_demog_df[ptnt_demog_df['age'] > 110]['age'].unique())
+    ptnt_demog_df['age'].replace(age_replace_vals, np.nan, inplace=True)
 
-    age_replace_vals = list(ptnt_demog2[ptnt_demog2['age'] > 110]['age'].unique())
-    ptnt_demog2['age'].replace(age_replace_vals, np.nan, inplace = True)
+    return ptnt_demog_df
 
-    return ptnt_demog2
-    
+def calculate_age_icu_and_hospital_stay_durations(ptnt_demog_df):
+
+    '''
+    Calculates age and duration of stays in ICU and hospital
+    Complex function but leverages the single call to iterrows for efficiency
+    :param ptnt_demog_df:
+    :return ptnt_demog_df:
+    '''
+    print("Calculating ages, duration of stays")
+    # len(pd.date_range()) APPEARS TO TAKE A VERY LONG TIME
+    for index, row in ptnt_demog_df.iterrows():
+        age_val = calculate_age(row)
+        icu_stay_val = calculate_icu_stay_length(row)
+        hosp_stay_val = calculate_hospital_stay(row)
+        ptnt_demog_df.at[index, 'age'] = age_val
+        ptnt_demog_df.at[index, 'icu_stay'] = icu_stay_val
+        ptnt_demog_df.at[index, 'hosp_stay'] = hosp_stay_val
+
+    return ptnt_demog_df
     
 
 def create_diagnoses_defs(ptnt_demog2):   
