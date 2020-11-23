@@ -4,6 +4,7 @@ from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
 import yaml
 import numpy as np
+from icu_mortality_prediction import DATA_DIR
 
 
 def quant_cats(feature, Q1, Q2, Q3):
@@ -111,12 +112,34 @@ def calculate_age_icu_and_hospital_stay_durations(ptnt_demog_df):
     return ptnt_demog_df
     
 
-def create_diagnoses_defs(ptnt_demog2):   
-    #phenotypes = add_hcup_ccs_2015_groups(diagnoses, yaml.load(open(args.phenotype_definitions, 'r')))
-    print("creating diagnoses definitions")
-    definitions = yaml.load(open('../data/hcup_ccs_2015_definitions.yaml', 'r'))
+def load_diagnoses_definitions():
+    """
 
-    diagnoses = ptnt_demog[['hadm_id', 'icd9_code', 'short_title']].copy()
+    Returns
+    -------
+    definitions: dictionary
+                    contains ICD9 codes for diagnoses definitions from HCUP CCS 2015
+    """
+    print("creating diagnoses definitions")
+    definitions_path = os.path.join(DATA_DIR, 'external/hcup_ccs_2015_definitions.yaml')
+    definitions = yaml.load(open(definitions_path, 'r'), Loader=yaml.FullLoader)
+    return definitions
+
+
+def create_diagnoses_defs(ptnt_demog_df):
+
+    """
+
+    Parameters
+    ----------
+    ptnt_demog_df: pandas DataFrame
+                    patient demographic data
+    """
+
+    print("creating diagnoses definitions")
+    definitions = load_diagnoses_definitions()
+
+    diagnoses = ptnt_demog_df[['hadm_id', 'icd9_code', 'short_title']].copy()
 
     # create mapping of hcup_ccs_2015_definitions to diagnoses icd9 codes
     def_map = {}
@@ -142,10 +165,33 @@ def create_diagnoses_defs(ptnt_demog2):
     return diagnoses_bm, diagnoses
     
     
-def create_diagnoses_df(ptnt_demog2, diagnoses_bm, diagnoses):
-    
-    icustays = list(ptnt_demog2.index)
+def create_diagnoses_df(ptnt_demog_df, diagnoses_bm, diagnoses):
 
+    """
+
+    Parameters
+    ----------
+    ptnt_demog_df: pandas DataFrame
+                    patient demographic data
+    diagnoses_bm: list
+                    benchmarked diagnoses (diagnoses used in a model performance
+                                                benchmarking exercise)
+    diagnoses: pandas DataFrame
+                    diagnoses from patient demographics table
+
+    Returns
+    -------
+    ptnt_demog_df: pandas DataFrame
+    diagnoses2: pandas DataFrame
+                    diagnoses index by icustays
+
+    """
+
+    icustays = list(ptnt_demog_df.index)
+    """
+    prior work was done to create benchmarks for model performance. Diagnoses that were used in that
+    excercise
+    """
     # create dataframe with hcup_ccp diagnoses benchmark categories as columns and
     # icustay_id information as indices. if the diagnosis is present for a given icustay the 
     # value is 1, otherwise 0. 
@@ -158,11 +204,11 @@ def create_diagnoses_df(ptnt_demog2, diagnoses_bm, diagnoses):
             diagnoses2.loc[row[0]][row[1]['HCUP_CCS_2015']] = 1
     
     #print "filled diagnoses dataframe "   
-    ptnt_demog2.drop(['subject_id', 'deathtime', 'hadm_id'], inplace = True, axis = 1)
-    cols = list(ptnt_demog2.columns)
+    ptnt_demog_df.drop(['subject_id', 'deathtime', 'hadm_id'], inplace = True, axis = 1)
+    cols = list(ptnt_demog_df.columns)
     cols.insert(0, cols.pop(cols.index('hospital_expire_flag')))
-    ptnt_demog2 = ptnt_demog2[cols]
-    return ptnt_demog2, diagnoses2
+    ptnt_demog_df = ptnt_demog_df[cols]
+    return ptnt_demog_df, diagnoses2
     
 
         
