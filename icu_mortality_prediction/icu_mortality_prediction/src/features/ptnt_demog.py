@@ -223,17 +223,10 @@ def continuous_to_categorical(ptnt_demog_data2_df, columns_by_data_type_dict):
     
     return ptnt_demog_data2_df
 
-def categorical_to_dummies(ptnt_demog_data):
-    dummies = ptnt_demog_data[ptnt_demog_data.columns[:1]]
-    for col in ptnt_demog_data.columns[1:]:
-        chimp = pd.get_dummies(ptnt_demog_data[col], prefix = col)
-        dummies = dummies.merge(chimp, left_index = True, right_index = True, 
-                           how = 'left', sort = True)
+def categorical_to_dummies(ptnt_demog_data2_df):
+    ptnt_demog_data2_df = pd.get_dummies(ptnt_demog_data2_df, columns=ptnt_demog_data2_df.columns[1:])
 
-    ## MERGE DUMMY VARIABLES AND DIAGNOSES
-
-    
-    return dummies
+    return ptnt_demog_data2_df
     
 
 
