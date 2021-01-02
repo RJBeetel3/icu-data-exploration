@@ -130,6 +130,7 @@ def create_diagnoses_defs(ptnt_demog_df):
 
     """
 
+
     Parameters
     ----------
     ptnt_demog_df: pandas DataFrame
@@ -141,7 +142,11 @@ def create_diagnoses_defs(ptnt_demog_df):
 
     diagnoses = ptnt_demog_df[['hadm_id', 'icd9_code', 'short_title']].copy()
 
-    # create mapping of hcup_ccs_2015_definitions to diagnoses icd9 codes
+    """
+    create mapping of hcup_ccs_2015_definitions to diagnoses icd9 codes
+    resulting dictionary has codes as keys, the corresponding diagnosis and whether that diagnosis was used in 
+    benchmarking as values
+    """
     def_map = {}
     for dx in definitions:
         for code in definitions[dx]['codes']:
@@ -149,23 +154,21 @@ def create_diagnoses_defs(ptnt_demog_df):
 
     print("map created")
     # map hcup_ccs_2015 definitions to icd9 diagnoses codes
+    # map diagnosis name to 'HCUP_CCS_2015' and whether it is used in the benchmark exercise in 'USE_IN_BENCHMARK'
     diagnoses['HCUP_CCS_2015'] = diagnoses.icd9_code.apply(lambda c: def_map[c][0] if c in def_map else None)
     diagnoses['USE_IN_BENCHMARK'] = diagnoses.icd9_code.apply(lambda c: int(def_map[c][1]) if c in def_map else None)
-    #diagnoses['subject_id'] = diagnoses.index
-    #diagnoses.set_index(np.arange(diagnoses.shape[0]), inplace = True)
-
 
     # create dataframe from the def_map dict so that we can isolate the 
     # definitions that are used in benchmarking
-
-    def_map_df = pd.DataFrame.from_dict(def_map, orient = 'index')
+    def_map_df = pd.DataFrame.from_dict(def_map, orient='index')
     def_map_df.columns = ['Diagnoses', 'Benchmark']
-    diagnoses_bm = list(def_map_df[def_map_df.Benchmark == True].drop_duplicates('Diagnoses').Diagnoses)
+
+    diagnoses_bm_list = list(def_map_df[def_map_df.Benchmark==True].drop_duplicates('Diagnoses').Diagnoses)
     
-    return diagnoses_bm, diagnoses
+    return diagnoses_bm_list, diagnoses
     
     
-def create_diagnoses_df(ptnt_demog_df, diagnoses_bm, diagnoses):
+def create_diagnoses_df(ptnt_demog_df, diagnoses_bm_list, diagnoses):
 
     """
 
@@ -173,7 +176,7 @@ def create_diagnoses_df(ptnt_demog_df, diagnoses_bm, diagnoses):
     ----------
     ptnt_demog_df: pandas DataFrame
                     patient demographic data
-    diagnoses_bm: list
+    diagnoses_bm_list: list
                     benchmarked diagnoses (diagnoses used in a model performance
                                                 benchmarking exercise)
     diagnoses: pandas DataFrame
@@ -190,23 +193,18 @@ def create_diagnoses_df(ptnt_demog_df, diagnoses_bm, diagnoses):
     icustays = list(ptnt_demog_df.index)
     """
     prior work was done to create benchmarks for model performance. Diagnoses that were used in that
-    excercise
+    excercise are included here
     """
     # create dataframe with hcup_ccp diagnoses benchmark categories as columns and
     # icustay_id information as indices. if the diagnosis is present for a given icustay the 
     # value is 1, otherwise 0. 
 
-    diagnoses2 = pd.DataFrame(columns = diagnoses_bm, index = icustays)
+    diagnoses2 = pd.DataFrame(columns = diagnoses_bm_list, index = icustays)
     diagnoses2.fillna(0, inplace = True)
     #print "created empty diagnoses dataframe"
     for row in diagnoses.iterrows():
         if row[1]['USE_IN_BENCHMARK'] == 1:
             diagnoses2.loc[row[0]][row[1]['HCUP_CCS_2015']] = 1
-    
-    #print "filled diagnoses dataframe "   
-    ptnt_demog_df.drop(['subject_id', 'deathtime', 'hadm_id'], inplace = True, axis = 1)
-    cols = list(ptnt_demog_df.columns)
-    cols.insert(0, cols.pop(cols.index('hospital_expire_flag')))
     ptnt_demog_df = ptnt_demog_df[cols]
     return ptnt_demog_df, diagnoses2
     
