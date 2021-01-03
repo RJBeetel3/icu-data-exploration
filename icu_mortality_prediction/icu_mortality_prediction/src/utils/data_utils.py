@@ -47,10 +47,10 @@ def continuous_to_categorical(ptnt_demog_data2_df, columns_by_data_type_dict):
     return ptnt_demog_data2_df
 
 
-def categorical_to_dummies(ptnt_demog_data2_df):
-    ptnt_demog_data2_df = pd.get_dummies(ptnt_demog_data2_df, columns=ptnt_demog_data2_df.columns[1:])
+def one_hot_encode_categorical_features(data_df, columns):
+    data_df = pd.get_dummies(data_df, columns=columns)
 
-    return ptnt_demog_data2_df
+    return data_df
 
 
 def cast_dates_and_times(data_df, date_time_cols):

@@ -216,9 +216,9 @@ def remove_age_greater_than_100yrs(data_df):
     data_df['age'].replace(age_replace_vals, np.nan, inplace=True)
     return data_df
 
-def write_best_features(dummies):
+def select_best_features(data_df):
     
-    frame = dummies
+    frame = data_df
     X = frame[frame.columns[1:]]
     y = frame['hospital_expire_flag']
 
