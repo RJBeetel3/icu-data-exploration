@@ -1,6 +1,6 @@
-import os
+
 import pandas as pd
-import numpy as np
+
 
 
 def group_column_names_by_data_type(data_df):
@@ -47,8 +47,8 @@ def continuous_to_categorical(ptnt_demog_data2_df, columns_by_data_type_dict):
     return ptnt_demog_data2_df
 
 
-def one_hot_encode_categorical_features(data_df, columns):
-    data_df = pd.get_dummies(data_df, columns=columns)
+def one_hot_encode_categorical_features(data_df, feature_columns):
+    data_df = pd.get_dummies(data_df, columns=feature_columns)
 
     return data_df
 
@@ -72,3 +72,35 @@ def quant_cats(feature, Q1, Q2, Q3):
         return 'Q2'
     elif feature > Q3:
         return 'Q3'
+
+
+def select_best_features(data_df, feature_columns, outcome_column):
+    frame = data_df
+    X = frame[feature_columns]
+    y = frame[outcome_column]
+
+    # SELECT K BEST FEATURES BASED ON CHI2 SCORES
+    selector = SelectKBest(score_func=chi2, k='all')
+    selector.fit(X, y)
+    p_vals = pd.Series(selector.pvalues_, name='p_values', index=X.columns)
+    scores = pd.Series(selector.scores_, name='scores', index=X.columns)
+    features_df = pd.concat([p_vals, scores], axis=1)
+    features_df.sort_values(by='scores', ascending=False, inplace=True)
+    print("Feature scores/p_values in descending/ascending order")
+    print(features_df.head(20))
+
+    best_features = frame[features_df[features_df.p_values < .001].index]
+
+    frame = pd.DataFrame(y).merge(best_features, left_index=True, right_index=True,
+                                  how='left', sort=True)
+
+    print("head of selected feature frame ")
+    print(frame.head())
+    # code for writing features to file
+    root = '../data/features/'
+    name = 'Ptnt_Demog_Features.csv'
+    name2 = 'Ptnt_Demog_FeaturesScores.csv'
+    frame.to_csv(root + name)
+    features_df[features_df.p_values < .001].to_csv(root + name2)
+    y = pd.DataFrame(y)
+    y.to_csv(root + 'outcomes.csv')
