@@ -7,6 +7,10 @@ All of it.
 
 __author__ = 'rjb'
 
+
+import pandas as pd
+from sklearn.feature_selection import SelectKBest, chi2
+
 def calculate_mutual_info_between_features_and_labels(features_df, labels_df):
     """
    Calculates mutual information between features and targets
@@ -106,6 +110,7 @@ def select_k_best_features(data_df, selection_parameters_dict):
     Selects best features given features, labels and methods
     Selection can be for a given number of features or for features with
     A threshold p-value
+    Assumes labels in column 0 and features in remaining columns
     Parameters
     ----------
     data_df: pandas dataframe
@@ -130,7 +135,10 @@ def select_k_best_features(data_df, selection_parameters_dict):
     else:
         print("Selecting {} best features \n".format(
             selection_parameters_dict['k'],))
-    selector = SelectKBest(selection_parameters_dict['scorer'],
+
+    if selection_parameters_dict['scorer']=='chi2':
+        scorer=chi2
+    selector = SelectKBest(scorer,
                            selection_parameters_dict['k'])
     selector.fit(data_df[feature_columns], data_df[label_columns])
     k_best_features_series = create_feature_selection_pvalues_series(selector, feature_columns)
