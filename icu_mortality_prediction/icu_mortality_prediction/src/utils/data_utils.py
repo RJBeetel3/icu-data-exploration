@@ -51,3 +51,24 @@ def categorical_to_dummies(ptnt_demog_data2_df):
     ptnt_demog_data2_df = pd.get_dummies(ptnt_demog_data2_df, columns=ptnt_demog_data2_df.columns[1:])
 
     return ptnt_demog_data2_df
+
+
+def cast_dates_and_times(data_df, date_time_cols):
+
+    for col in date_time_cols:
+        print("converting {}".format(col))
+        new_series = pd.to_datetime(data_df.loc[:, col])
+        data_df.loc[:, col] = new_series
+
+    return data_df
+
+
+def quant_cats(feature, Q1, Q2, Q3):
+    if feature <= Q1:
+        return 'Q0'
+    elif (feature > Q1 and feature <= Q2):
+        return 'Q1'
+    elif (feature > Q2 and feature <= Q3):
+        return 'Q2'
+    elif feature > Q3:
+        return 'Q3'

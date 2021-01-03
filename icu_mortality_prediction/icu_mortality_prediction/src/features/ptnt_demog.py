@@ -7,18 +7,6 @@ import numpy as np
 from icu_mortality_prediction import DATA_DIR
 
 
-def quant_cats(feature, Q1, Q2, Q3):
-    
-    if feature <=Q1:
-        return 'Q0'
-    elif (feature >Q1 and feature <= Q2):
-        return 'Q1'
-    elif (feature > Q2 and feature <= Q3):
-        return 'Q2'
-    elif feature > Q3:
-        return 'Q3'
-
-
 def import_demog_data():
     
     print("Importing patient demographic data")  
@@ -106,8 +94,8 @@ def calculate_age_icu_and_hospital_stay_durations(ptnt_demog_df):
         icu_stay_val = calculate_icu_stay_length(row)
         hosp_stay_val = calculate_hospital_stay(row)
         ptnt_demog_df.at[index, 'age'] = age_val
-        ptnt_demog_df.at[index, 'icu_stay'] = icu_stay_val
-        ptnt_demog_df.at[index, 'hosp_stay'] = hosp_stay_val
+        ptnt_demog_df.at[index, 'icu_stay_duration'] = icu_stay_val
+        ptnt_demog_df.at[index, 'hosp_stay_duration'] = hosp_stay_val
 
     return ptnt_demog_df
     
@@ -140,8 +128,8 @@ def create_diagnoses_defs(ptnt_demog_df):
     print("creating diagnoses definitions")
     definitions = load_diagnoses_definitions()
 
-    diagnoses = ptnt_demog_df[['hadm_id', 'icd9_code', 'short_title']].copy()
-
+    # diagnoses = ptnt_demog_df[['hadm_id', 'icd9_code', 'short_title']].copy()
+    diagnoses = ptnt_demog_df[['icd9_code', 'short_title']].copy()
     """
     create mapping of hcup_ccs_2015_definitions to diagnoses icd9 codes
     resulting dictionary has codes as keys, the corresponding diagnosis and whether that diagnosis was used in 
@@ -209,8 +197,24 @@ def create_diagnoses_df(ptnt_demog_df, diagnoses_bm_list, diagnoses):
     
 
         
+def remove_age_greater_than_100yrs(data_df):
+    """
 
+    Parameters
+    ----------
+    data_df
 
+    Returns
+    -------
+    data_df
+
+    TODO: pass just age series
+    """
+    age_replace_vals = list(data_df[data_df['age'] > 100]['age'].unique())
+    # display(age_replace_vals)
+
+    data_df['age'].replace(age_replace_vals, np.nan, inplace=True)
+    return data_df
 
 def write_best_features(dummies):
     
@@ -245,6 +249,7 @@ def write_best_features(dummies):
     features_df[features_df.p_values < .001].to_csv(root + name2)
     y = pd.DataFrame(y)
     y.to_csv(root + 'outcomes.csv')
+
 
 
 
