@@ -105,7 +105,7 @@ def select_top_n_features_by_mutual_info_score(mutual_info_feature_scores, numbe
 
     return top_mutual_info_feature_scores
 
-def select_k_best_features(data_df, selection_parameters_dict):
+def select_k_best_features(data_df, feature_selection_parameters_dict):
     """
     Selects best features given features, labels and methods
     Selection can be for a given number of features or for features with
@@ -126,70 +126,76 @@ def select_k_best_features(data_df, selection_parameters_dict):
     best_features_data_df: pandas dataframe
             data labels in first columm and features in remaining cols
     """
-    #TODO: refactor with data object
+    #TODO: add scorer options
     feature_columns = data_df.columns[1:]
     label_columns = data_df.columns[:1]
-    if selection_parameters_dict['k']=='all':
-        print("Selecting features with p-values < {}\n".format(
-            selection_parameters_dict['p_val']))
-    else:
-        print("Selecting {} best features \n".format(
-            selection_parameters_dict['k'],))
 
-    if selection_parameters_dict['scorer']=='chi2':
+
+    if feature_selection_parameters_dict['scorer']=='chi2':
         scorer=chi2
+    else:
+        print("please indicate 'chi2' as scorer")
+        return
+
     selector = SelectKBest(scorer,
-                           selection_parameters_dict['k'])
+                           feature_selection_parameters_dict['k'])
     selector.fit(data_df[feature_columns], data_df[label_columns])
     k_best_features_series = create_feature_selection_pvalues_series(selector, feature_columns)
     k_best_features_series = k_best_features_series.sort_values()
-
-    return k_best_features_series
-
-def select_k_best_features_2(cohort_data, selection_parameters_dict):
-    """
-    Selects best features given features, labels and methods
-    Selection can be for a given number of features or for features with
-    A threshold p-value
-    Parameters
-    ----------
-    data_df: pandas dataframe
-            data labels in first columm and features in remaining cols
-    selection_parameters_dict: dict
-            parameters include
-            'k': 'all',
-            'p_val': 0.1,
-            'scorer': chi2
-
-    Returns
-    ----------
-    best_features_data_df: pandas dataframe
-            data labels in first columm and features in remaining cols
-    """
-    #TODO: refactor with data object
-    feature_columns = cohort_data.get_feature_columns()
-    if selection_parameters_dict['k']=='all':
+    if feature_selection_parameters_dict['k']=='all':
         print("Selecting features with p-values < {}\n".format(
-            selection_parameters_dict['p_val']))
+            feature_selection_parameters_dict['p_val']))
+        k_best_features_series = filter_best_features_by_pvals(k_best_features_series, feature_selection_parameters_dict)
     else:
         print("Selecting {} best features \n".format(
-            selection_parameters_dict['k'],))
-    selector = SelectKBest(selection_parameters_dict['scorer'],
-                           selection_parameters_dict['k'])
-    selector.fit(cohort_data.get_features(), cohort_data.get_classification_labels())
-    k_best_features_series = create_feature_selection_pvalues_series(selector, feature_columns)
-    k_best_features_series = k_best_features_series.sort_values()
+            feature_selection_parameters_dict['k'],))
 
     return k_best_features_series
 
+# def select_k_best_features_2(cohort_data, feature_selection_parameters_dict):
+#     """
+#     Selects best features given features, labels and methods
+#     Selection can be for a given number of features or for features with
+#     A threshold p-value
+#     Parameters
+#     ----------
+#     data_df: pandas dataframe
+#             data labels in first columm and features in remaining cols
+#     selection_parameters_dict: dict
+#             parameters include
+#             'k': 'all',
+#             'p_val': 0.1,
+#             'scorer': chi2
+#
+#     Returns
+#     ----------
+#     best_features_data_df: pandas dataframe
+#             data labels in first columm and features in remaining cols
+#     """
+#     #TODO: refactor with data object
+#     feature_columns = cohort_data.get_feature_columns()
+#     if feature_selection_parameters_dict['k']=='all':
+#         print("Selecting features with p-values < {}\n".format(
+#             feature_selection_parameters_dict['p_val']))
+#     else:
+#         print("Selecting {} best features \n".format(
+#             feature_selection_parameters_dict['k'],))
+#     selector = SelectKBest(feature_selection_parameters_dict['scorer'],
+#                            feature_selection_parameters_dict['k'])
+#     selector.fit(cohort_data.get_features(), cohort_data.get_classification_labels())
+#     k_best_features_series = create_feature_selection_pvalues_series(selector, feature_columns)
+#     k_best_features_series = k_best_features_series.sort_values()
+#
+#     return k_best_features_series
 
-def filter_best_features_by_pvals(k_best_features_series, selection_parameters_dict):
+
+def filter_best_features_by_pvals(k_best_features_series, feature_selection_parameters_dict):
 
 
         print("Filtering features to include only those with p-val < {}.".format(
-            selection_parameters_dict['p_val']))
+            feature_selection_parameters_dict['p_val']))
         best_features_by_pval_series = k_best_features_series[
-                                    k_best_features_series<selection_parameters_dict['p_val']]
+                                    k_best_features_series<feature_selection_parameters_dict['p_val']]
         print("resulting in {} features".format(best_features_by_pval_series.shape[0]))
         return best_features_by_pval_series
 
