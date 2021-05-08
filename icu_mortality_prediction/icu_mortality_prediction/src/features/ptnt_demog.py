@@ -66,8 +66,8 @@ def reconfigure_patient_demographics_columns(ptnt_demog_df):
     # cols.insert(0, cols.pop(cols.index('icustay_id')))
     cols.insert(0, cols.pop(cols.index('hadm_id')))
     cols.insert(1, cols.pop(cols.index('age')))
-    cols.insert(2, cols.pop(cols.index('icu_stay')))
-    cols.insert(3, cols.pop(cols.index('hosp_stay')))
+    cols.insert(2, cols.pop(cols.index('icu_stay_duration')))
+    cols.insert(3, cols.pop(cols.index('hosp_stay_duration')))
     cols.insert(len(cols), cols.pop(cols.index('hospital_expire_flag')))
     ptnt_demog_df = ptnt_demog_df[cols].copy()
     return ptnt_demog_df

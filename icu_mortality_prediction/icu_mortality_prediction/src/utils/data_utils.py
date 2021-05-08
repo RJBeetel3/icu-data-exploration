@@ -4,7 +4,7 @@ import pandas as pd
 
 
 def group_column_names_by_data_type(data_df):
-    """
+    """categorical_to_dummies
      Groups columns by data type and returns each type in a list
 
 
